@@ -1206,7 +1206,7 @@
       <div class="logo">℞</div>
       <div>
         <h1>바이오핏 처방약 매칭 도우미</h1>
-        <div class="subtitle" id="subtitle">v3 · 메인 화면 업로드 가능 · 마스터 없이도 사용 가능</div>
+        <div class="subtitle" id="subtitle">v3</div>
       </div>
     </div>
     <div class="meta-row" id="metaRow">
@@ -1214,7 +1214,7 @@
       <span class="meta-pill" id="bothPill" hidden><span class="dot-both"></span>입원·외래 <strong>0</strong></span>
       <span class="meta-pill" id="outOnlyPill" hidden><span class="dot-out"></span>외래만 <strong>0</strong></span>
       <span class="meta-pill" id="stopPill" hidden><span class="dot-stop"></span>품절 <strong>0</strong></span>
-      <span class="meta-pill" id="hiraPill" hidden title="건강보험심사평가원 약제급여목록표">HIRA <strong>0</strong> <span class="date-tag" id="hiraPillDate"></span></span>
+      <span class="meta-pill" id="hiraPill" hidden title="건강보험심사평가원 약제급여목록표">HIRA · 심평원 등록 약품 <strong>0</strong>개 매칭<span class="date-tag" id="hiraPillDate"></span></span>
       <button type="button" class="settings-btn" id="settingsBtn" title="마스터 변경 / 설정">⚙</button>
     </div>
   </header>
@@ -1227,7 +1227,7 @@
         <span class="master-status-icon">📋</span>
         <div class="master-status-text">
           <strong>본원 약품 마스터를 업로드하세요</strong>
-          <span>업로드 없이도 HIRA로 약 이름·성분 확인은 가능합니다</span>
+          <span>본원 보유 약품 매칭을 위해 약품 목록 엑셀이 필요합니다</span>
         </div>
       </div>
       <div class="upload-zone compact" id="masterUploadZoneMain">
@@ -1519,7 +1519,7 @@ let HIRA = {};
 let HIRA_DATE = '';
 let HIRA_DATE_DISPLAY = '';
 let APP_TITLE = '바이오핏 처방약 매칭 도우미';
-let APP_SUBTITLE = 'v3 · 메인 화면 업로드 가능 · 마스터 없이도 사용 가능';
+let APP_SUBTITLE = 'v3';
 
 const LS_MASTER = 'pmatcher_master_v1';
 const LS_HIRA = 'pmatcher_hira_v1';
@@ -2541,7 +2541,14 @@ function updateAppDisplay() {
   hiraPill.hidden = hiraBrands === 0;
   if (hiraBrands > 0) {
     hiraPill.querySelector('strong').textContent = hiraBrands.toLocaleString();
-    document.getElementById('hiraPillDate').textContent = HIRA_DATE_DISPLAY || '';
+    // HIRA_DATE 형식 "YYYY-MM-DD" → " (YYYY.MM)" 변환
+    let pillDateText = '';
+    if (HIRA_DATE && /^\d{4}-\d{2}/.test(HIRA_DATE)) {
+      pillDateText = ` (${HIRA_DATE.slice(0, 4)}.${HIRA_DATE.slice(5, 7)})`;
+    } else if (HIRA_DATE_DISPLAY) {
+      pillDateText = ` (${HIRA_DATE_DISPLAY})`;
+    }
+    document.getElementById('hiraPillDate').textContent = pillDateText;
   }
   
   // 푸터 안내의 HIRA 날짜 갱신
