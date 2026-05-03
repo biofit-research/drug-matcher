@@ -1333,8 +1333,7 @@
 
     <textarea id="input" placeholder="예시:
 노바스크정 5mg | amlodipine | 5mg
-자나팜정 0.25mg | alprazolam | 0.25mg
-듀로제식패치"></textarea>
+자나팜정 0.25mg | alprazolam | 0.25mg"></textarea>
 
     <div class="actions">
       <button class="btn-primary" id="matchBtn">매칭 시작</button>
@@ -2059,8 +2058,8 @@ function renderMatchRow(m, isOtherDose = false) {
         <span class="match-meta">· ${escapeHtml(m.i || '-')}</span>
         ${m.m ? `<span class="match-meta">· ${escapeHtml(m.m)}</span>` : ''}
       </div>
-      <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google에서 ${escapeHtml(m.d)} 용법·효능 검색">용법·효능 ↗</a>
       <span class="rx-badge ${rx.cls}">${rx.label}</span>
+      <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google에서 ${escapeHtml(m.d)} 용법·효능 검색">용법·효능 ↗</a>
     </div>
   `;
 }
@@ -2126,8 +2125,8 @@ function renderResult(r) {
         const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(first.d + ' 용법 효능')}`;
         html += `<span class="combo-arrow">→</span>
           <span class="combo-match">${escapeHtml(first.d)}</span>
-          <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google에서 ${escapeHtml(first.d)} 용법·효능 검색">용법·효능 ↗</a>
-          <span class="rx-badge ${rx.cls}">${rx.label}</span>`;
+          <span class="rx-badge ${rx.cls}">${rx.label}</span>
+          <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google에서 ${escapeHtml(first.d)} 용법·효능 검색">용법·효능 ↗</a>`;
         if (cm.matches.length > 1) {
           html += `<span class="combo-more">+${cm.matches.length - 1}</span>`;
         }
@@ -2260,8 +2259,7 @@ document.getElementById('sampleBtn').addEventListener('click', () => {
   document.getElementById('input').value = `노바스크정 5mg | amlodipine | 5mg
 자나팜정 0.25mg | alprazolam | 0.25mg
 트라젠타정 5mg | linagliptin | 5mg
-씬지로이드정 0.1mg | levothyroxine | 0.1mg
-듀로제식패치`;
+씬지로이드정 0.1mg | levothyroxine | 0.1mg`;
 });
 
 document.getElementById('helpBtn').addEventListener('click', () => {
