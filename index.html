@@ -968,6 +968,27 @@
   .rx-badge.rx-both { background: var(--emerald-bg); color: var(--emerald); border-color: var(--emerald-border); }
   .rx-badge.rx-out-only { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
   .rx-badge.rx-stopped { background: var(--rose-bg); color: var(--rose); border-color: var(--rose-border); }
+  .usage-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    font-size: 0.6875rem;
+    border-radius: 4px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-2);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .usage-btn:hover {
+    background: var(--indigo-bg, #EEF2FF);
+    color: var(--indigo, #4F46E5);
+    border-color: var(--indigo-border, #C7D2FE);
+  }
   .dose-warn {
     display: inline-block;
     font-size: 0.625rem;
@@ -1935,6 +1956,7 @@ function renderMatchRow(m, isOtherDose = false) {
   const comboBadge = isCombo ? '<span class="combo-tag">복합</span>' : '';
   const doseWarn = isOtherDose ? '<span class="dose-warn">다른 함량</span>' : '';
   const rx = rxInfo(m.s);
+  const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(m.d + ' 용법 효능')}`;
   return `
     <div class="match-row">
       <span class="arrow">→</span>
@@ -1943,6 +1965,7 @@ function renderMatchRow(m, isOtherDose = false) {
         <span class="match-meta">· ${escapeHtml(m.i || '-')}</span>
         ${m.m ? `<span class="match-meta">· ${escapeHtml(m.m)}</span>` : ''}
       </div>
+      <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google에서 ${escapeHtml(m.d)} 용법·효능 검색">용법·효능 ↗</a>
       <span class="rx-badge ${rx.cls}">${rx.label}</span>
     </div>
   `;
@@ -2006,8 +2029,10 @@ function renderResult(r) {
           return 0;
         })[0];
         const rx = rxInfo(first.s);
+        const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(first.d + ' 용법 효능')}`;
         html += `<span class="combo-arrow">→</span>
           <span class="combo-match">${escapeHtml(first.d)}</span>
+          <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google에서 ${escapeHtml(first.d)} 용법·효능 검색">용법·효능 ↗</a>
           <span class="rx-badge ${rx.cls}">${rx.label}</span>`;
         if (cm.matches.length > 1) {
           html += `<span class="combo-more">+${cm.matches.length - 1}</span>`;
