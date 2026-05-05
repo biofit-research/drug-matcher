@@ -1109,7 +1109,7 @@
   }
   .search-results {
     margin-top: 12px;
-    max-height: 320px;
+    max-height: 480px;
     overflow-y: auto;
   }
   .search-results .item {
@@ -1118,12 +1118,53 @@
     border: 1px solid transparent;
     cursor: default;
     font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   .search-results .item:hover { background: var(--surface-alt); }
+  .search-results .item .item-main {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-results .item .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
   .search-results .item .name { font-weight: 500; }
   .search-results .item .ing { color: var(--text-2); font-size: 0.8125rem; }
   .search-results .empty {
     color: var(--text-3); font-size: 0.875rem; padding: 20px; text-align: center;
+  }
+  .search-section-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-2);
+    padding: 12px 12px 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    position: sticky;
+    top: 0;
+    background: var(--surface, white);
+    z-index: 1;
+  }
+  .search-section-title:first-child { padding-top: 4px; }
+  .hira-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 0.6875rem;
+    border-radius: 4px;
+    font-weight: 500;
+    background: var(--indigo-bg, #EEF2FF);
+    color: var(--indigo, #4F46E5);
+    border: 1px solid var(--indigo-border, #C7D2FE);
+    white-space: nowrap;
   }
 
   footer {
@@ -1354,9 +1395,9 @@
   <section class="card" id="searchCard">
     <div class="section-header">
       <span class="step search">⌕</span>
-      <h2>본원 약품 검색</h2>
+      <h2>약품 검색</h2>
     </div>
-    <input type="text" class="search-input" id="searchBox" placeholder="상품명 또는 성분명(영문)으로 검색...">
+    <input type="text" class="search-input" id="searchBox" placeholder="상품명(한글) 또는 성분명(영문)으로 검색...">
     <div class="search-results" id="searchResults">
       <div class="empty">검색어를 입력하세요</div>
     </div>
@@ -2186,49 +2227,105 @@ function renderResults(results) {
 }
 
 // =====================================================
-// 검색 (본원 약품 직접 검색)
+// 검색 (본원 약품 + HIRA 통합)
 // =====================================================
 function runSearch(query) {
   const container = document.getElementById('searchResults');
   const q = normalize(query);
+  const hasMaster = MASTER.length > 0;
+  const hasHira = Object.keys(HIRA).length > 0;
 
   if (!q || q.length < 1) {
-    if (MASTER.length === 0) {
-      container.innerHTML = '<div class="empty">본원 마스터가 업로드되지 않았습니다 — 위에서 엑셀을 업로드하세요.</div>';
+    if (!hasMaster && !hasHira) {
+      container.innerHTML = '<div class="empty">본원 마스터·HIRA 데이터 모두 없음</div>';
+    } else if (!hasMaster) {
+      container.innerHTML = '<div class="empty">검색어를 입력하세요 (HIRA 등록 약품 검색)</div>';
     } else {
-      container.innerHTML = '<div class="empty">검색어를 입력하세요</div>';
+      container.innerHTML = '<div class="empty">검색어를 입력하세요 (본원 약품 + HIRA 등록 약품)</div>';
     }
     return;
   }
 
-  if (MASTER.length === 0) {
-    container.innerHTML = '<div class="empty">본원 마스터 미업로드 — 검색 불가</div>';
-    return;
-  }
-
-  const results = MASTER.filter(m => {
+  // 1) 본원 마스터 검색
+  const masterResults = hasMaster ? MASTER.filter(m => {
     if (m.n.includes(q)) return true;
     if (normalize(m.r).includes(q)) return true;
     return m.g.some(g => normalize(g.n).includes(q));
-  }).slice(0, 30);
+  }).slice(0, 30) : [];
 
-  if (results.length === 0) {
+  // 2) HIRA 검색 (본원에 없는 약품만 — 중복 제거)
+  const masterBaseKeys = new Set(masterResults.map(m => m.b));
+  const hiraResults = [];
+  if (hasHira) {
+    const seenBrands = new Set();
+    for (const brandKey of Object.keys(HIRA)) {
+      if (hiraResults.length >= 30) break;
+      const records = HIRA[brandKey];
+      // 브랜드명 매칭 또는 성분명 매칭
+      const brandMatch = brandKey.includes(q);
+      const ingMatch = !brandMatch && records.some(r => r.g.some(g => normalize(g.n).includes(q)));
+      if (!brandMatch && !ingMatch) continue;
+      if (masterBaseKeys.has(brandKey)) continue;  // 본원 결과와 중복 시 본원 우선 표시
+      for (const r of records) {
+        const sigKey = brandKey + '|' + r.g.map(g => g.n + g.d).join(',');
+        if (seenBrands.has(sigKey)) continue;
+        seenBrands.add(sigKey);
+        hiraResults.push(r);
+        if (hiraResults.length >= 30) break;
+      }
+    }
+  }
+
+  if (masterResults.length === 0 && hiraResults.length === 0) {
     container.innerHTML = '<div class="empty">검색 결과 없음</div>';
     return;
   }
 
-  container.innerHTML = results.map(m => {
-    const rx = rxInfo(m.s);
-    return `
-    <div class="item">
-      <div>
-        <span class="name">${escapeHtml(m.d)}</span>
-        <span class="rx-badge ${rx.cls}" style="margin-left:6px;">${rx.label}</span>
-      </div>
-      <div class="ing">${escapeHtml(m.i)} · ${escapeHtml(m.m)}</div>
-    </div>
-  `;
-  }).join('');
+  let html = '';
+
+  // 본원 결과
+  if (masterResults.length > 0) {
+    html += `<div class="search-section-title">📦 본원 보유 약품 (${masterResults.length}${masterResults.length >= 30 ? '+' : ''})</div>`;
+    html += masterResults.map(m => {
+      const rx = rxInfo(m.s);
+      const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(m.d + ' 용법 효능')}`;
+      return `
+      <div class="item">
+        <div class="item-main">
+          <span class="name">${escapeHtml(m.d)}</span>
+          <span class="ing">· ${escapeHtml(m.i)}${m.m ? ' · ' + escapeHtml(m.m) : ''}</span>
+        </div>
+        <div class="item-actions">
+          <span class="rx-badge ${rx.cls}">${rx.label}</span>
+          <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google 검색">용법·효능 ↗</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // HIRA 결과
+  if (hiraResults.length > 0) {
+    const headerNote = hasMaster ? '본원 미보유' : '';
+    html += `<div class="search-section-title">📚 HIRA 등록 약품${headerNote ? ' · ' + headerNote : ''} (${hiraResults.length}${hiraResults.length >= 30 ? '+' : ''})</div>`;
+    html += hiraResults.map(r => {
+      const ingsText = r.g.map(g => `${g.n} ${g.d}`).join(', ');
+      const comboBadge = r.c ? '<span class="combo-tag">복합</span>' : '';
+      const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(r.b + ' 용법 효능')}`;
+      return `
+      <div class="item">
+        <div class="item-main">
+          <span class="name">${escapeHtml(r.b)}</span>${comboBadge}
+          <span class="ing">· ${escapeHtml(ingsText)}</span>
+        </div>
+        <div class="item-actions">
+          <span class="hira-tag">HIRA</span>
+          <a class="usage-btn" href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="Google 검색">용법·효능 ↗</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  container.innerHTML = html;
 }
 
 // =====================================================
